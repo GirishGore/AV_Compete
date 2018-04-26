@@ -46,8 +46,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.grid_search import GridSearchCV
 rf = RandomForestRegressor(verbose=1)
 param_grid = {
-                 'n_estimators': [800,1000,1200],
-                 'max_depth': [3,5]
+                 'n_estimators': [1100,1200,1300],
+                 'max_depth': [4,5,6]
              }
 grid_clf = GridSearchCV(rf, param_grid, cv=10)
 grid_clf.fit(X, y)
