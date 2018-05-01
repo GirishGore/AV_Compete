@@ -19,22 +19,6 @@ y = X.Item_Outlet_Sales
 X = [X , Xt]
 X = pd.concat(X)
 
-## Mean Encoding on Item_Identifier
-means = X.groupby(['Item_Identifier','Outlet_Identifier']).Item_Outlet_Sales.mean().reset_index(name='mean')
-means.describe
-def returnMeans(row):
-     a = means[means['Item_Identifier'] == row['Item_Identifier']]
-     return a['mean'][a['Outlet_Identifier'] == row['Outlet_Identifier']].values[0]
- 
-print(returnMeans(X.iloc[0]))
-X['Mean_Target_Sales'] = X.apply(returnMeans , axis=1)
-meansItems = X.groupby(['Item_Identifier']).Item_Outlet_Sales.mean()
-#means.describe
-#means['NCZ54']['OUT018']
-#X['Mean_Target_Sales'] = X['Item_Identifier'].map(means)
-X['Mean_Target_Sales'].describe
-X['Mean_Target_Sales'].fillna(X['Item_Identifier'].map(meansItems) , inplace=True)
-
 #############################################################################
 X.describe(include='all')
 
@@ -120,18 +104,34 @@ X = X.loc[X['isTrain'] == 1]
 
 
 
-#from sklearn.ensemble import RandomForestRegressor
-#rf = RandomForestRegressor(n_estimators=1500,verbose=1)
-#rf.fit(X,y)
+from lightgbm import LGBMRegressor
+from sklearn.grid_search import GridSearchCV
+lgb = LGBMRegressor(verbose=1)
+param_grid = {
+                 'n_estimators': [470],
+                 'max_depth': [3],
+                 'learning_rate': [0.01],
+                 'min_child_weight' : [3]
+             }
+grid_clf = GridSearchCV(lgb, param_grid, cv=10)
+grid_clf.fit(X, y)
+
+
+from sklearn.metrics import mean_squared_error
+rmse = mean_squared_error(y, grid_clf.predict(X))
+print(rmse)
+predictedA = grid_clf.predict(Xt)
+
+y = predictedA - y
 
 from xgboost import XGBRegressor
 from sklearn.grid_search import GridSearchCV
 xgb = XGBRegressor(verbose_eval=1)
 param_grid = {
-                 'n_estimators': [500,700],
+                 'n_estimators': [500],
                  'max_depth': [3],
                  'learning_rate': [0.01],
-                 'min_child_weight' : [7]
+                 'min_child_weight' : [3,7]
              }
 grid_clf = GridSearchCV(xgb, param_grid, cv=10)
 grid_clf.fit(X, y)
@@ -140,16 +140,16 @@ grid_clf.fit(X, y)
 from sklearn.metrics import mean_squared_error
 rmse = mean_squared_error(y, grid_clf.predict(X))
 print(rmse)
-predicted = grid_clf.predict(Xt)
+predictedB = grid_clf.predict(Xt)
 
-print(grid_clf.grid_scores_)
-print(grid_clf.best_params_)
+preddiff = predictedA + predictedB
+pd.Series(preddiff)
 
-
-
+import matplotlib.pyplot as plt
+plt.hist(preddiff)
 Submit = pd.read_csv("E:\\Work\\AV_Compete\\BigMartSalesIII\\SampleSubmission.csv")
-Submit['Item_Outlet_Sales'] = predicted
-Submit.to_csv('E:\\Work\\AV_Compete\\BigMartSalesIII\\Python\\XGB_Base.csv', index= False)
+Submit['Item_Outlet_Sales'] = predictedA + predictedB
+Submit.to_csv('E:\\Work\\AV_Compete\\BigMartSalesIII\\Python\\Ensemble.csv', index= False)
 
 plt.plot(grid_clf.best_estimator_.feature_importances_)
 plt.xticks(np.arange(X.shape[1]), X.columns.tolist() , rotation=80)

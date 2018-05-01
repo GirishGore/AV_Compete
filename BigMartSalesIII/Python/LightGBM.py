@@ -19,22 +19,6 @@ y = X.Item_Outlet_Sales
 X = [X , Xt]
 X = pd.concat(X)
 
-## Mean Encoding on Item_Identifier
-means = X.groupby(['Item_Identifier','Outlet_Identifier']).Item_Outlet_Sales.mean().reset_index(name='mean')
-means.describe
-def returnMeans(row):
-     a = means[means['Item_Identifier'] == row['Item_Identifier']]
-     return a['mean'][a['Outlet_Identifier'] == row['Outlet_Identifier']].values[0]
- 
-print(returnMeans(X.iloc[0]))
-X['Mean_Target_Sales'] = X.apply(returnMeans , axis=1)
-meansItems = X.groupby(['Item_Identifier']).Item_Outlet_Sales.mean()
-#means.describe
-#means['NCZ54']['OUT018']
-#X['Mean_Target_Sales'] = X['Item_Identifier'].map(means)
-X['Mean_Target_Sales'].describe
-X['Mean_Target_Sales'].fillna(X['Item_Identifier'].map(meansItems) , inplace=True)
-
 #############################################################################
 X.describe(include='all')
 
@@ -120,20 +104,19 @@ X = X.loc[X['isTrain'] == 1]
 
 
 
-#from sklearn.ensemble import RandomForestRegressor
-#rf = RandomForestRegressor(n_estimators=1500,verbose=1)
-#rf.fit(X,y)
-
-from xgboost import XGBRegressor
+from lightgbm import LGBMRegressor
 from sklearn.grid_search import GridSearchCV
-xgb = XGBRegressor(verbose_eval=1)
+lgb = LGBMRegressor(verbose=1)
 param_grid = {
-                 'n_estimators': [500,700],
-                 'max_depth': [3],
-                 'learning_rate': [0.01],
-                 'min_child_weight' : [7]
+                 'n_estimators': [470,400,530,580],
+                 'max_depth': [2,3,4],
+                 'learning_rate': [0.1,0.01],
+                 'min_child_weight' : [1,3,5],
+                 'bagging_fraction' : [0.55,0.65,0.7,0.75],
+                 'min_data_in_leaf' : [3,4,5],
+                 'feature_fraction' : [0.7,0.85,0.95]
              }
-grid_clf = GridSearchCV(xgb, param_grid, cv=10)
+grid_clf = GridSearchCV(lgb, param_grid, cv=10)
 grid_clf.fit(X, y)
 
 
@@ -149,7 +132,7 @@ print(grid_clf.best_params_)
 
 Submit = pd.read_csv("E:\\Work\\AV_Compete\\BigMartSalesIII\\SampleSubmission.csv")
 Submit['Item_Outlet_Sales'] = predicted
-Submit.to_csv('E:\\Work\\AV_Compete\\BigMartSalesIII\\Python\\XGB_Base.csv', index= False)
+Submit.to_csv('E:\\Work\\AV_Compete\\BigMartSalesIII\\Python\\LightGBM.csv', index= False)
 
 plt.plot(grid_clf.best_estimator_.feature_importances_)
 plt.xticks(np.arange(X.shape[1]), X.columns.tolist() , rotation=80)
