@@ -85,10 +85,17 @@ X['Item_Type_Combined'].describe
 X.loc[X['Item_Type_Combined']=="NC",'Item_Fat_New'] = 2
 X['Item_Fat_New'].value_counts()
 
+X = pd.get_dummies(data=X, columns=['Outlet_Type'])
+X = pd.get_dummies(data=X, columns=['Item_Type'])
+
+X.describe
+X.dtypes
 ## Dropping un necessary variables
 X = X.drop(['Item_Outlet_Sales','Item_MRP','Item_Weight','Item_Fat_Content','Outlet_Establishment_Year'], axis=1)
 
 train = X.copy()
+
+
 
 print(X.dtypes)
 ### One lable encoding of categorical variables
@@ -108,13 +115,13 @@ from lightgbm import LGBMRegressor
 from sklearn.grid_search import GridSearchCV
 lgb = LGBMRegressor(verbose=1)
 param_grid = {
-                 'n_estimators': [470,400,530,580],
-                 'max_depth': [2,3,4],
-                 'learning_rate': [0.1,0.01],
-                 'min_child_weight' : [1,3,5],
-                 'bagging_fraction' : [0.55,0.65,0.7,0.75],
-                 'min_data_in_leaf' : [3,4,5],
-                 'feature_fraction' : [0.7,0.85,0.95]
+                 'n_estimators': [530],
+                 'max_depth': [3],
+                 'learning_rate': [0.1],
+                 'min_child_weight' : [1],
+                 'bagging_fraction' : [0.65],
+                 'min_data_in_leaf' : [4],
+                 'feature_fraction' : [0.95]
              }
 grid_clf = GridSearchCV(lgb, param_grid, cv=10)
 grid_clf.fit(X, y)
