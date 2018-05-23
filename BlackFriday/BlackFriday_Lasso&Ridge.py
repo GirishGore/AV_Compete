@@ -61,10 +61,30 @@ from sklearn.linear_model import LinearRegression
 regressor = LinearRegression()  
 regressor.fit(X_train, y_train)  
 
+## Incorporating Lasso and Rigde Regression
+
+from sklearn.linear_model import Ridge
+alpha_ridge = [1e-15, 1e-10, 1e-8, 1e-4, 1e-3,1e-2, 1, 5, 10, 20]
+results = np.zeros(len(alpha_ridge))
+
+for i in range(0,len(alpha_ridge)) :
+    ridgereg = Ridge(alpha=alpha_ridge[i],normalize=True)
+    ridgereg.fit(X_train,y_train)
+    y_pred = ridgereg.predict(X_test)
+    rss = np.sqrt(sum((y_pred-y_test)**2))
+    results[i] = rss
+
+print(results)
+
+
+ridgereg = Ridge(alpha=1e-2,normalize=True)
+ridgereg.fit(X_train,y_train)
 ## Predicting to calculate train and test error
-y_pred_train = regressor.predict(X_train)
-y_pred_test = regressor.predict(X_test)
-y_pred = regressor.predict(data_test)
+y_pred_train = ridgereg.predict(X_train)
+y_pred_test = ridgereg.predict(X_test)
+y_pred = ridgereg.predict(data_test)
+
+
 
 
 ## Creating train_error and test_error data frames and plotting them
@@ -80,7 +100,7 @@ df_test_error.plot.scatter(x=['Predicted'] , y=['Actual'])
 ## Generating test and train errors RMSE
 from sklearn import metrics  
 print('Root Mean Squared Error (Train):', np.sqrt(metrics.mean_squared_error(y_train, y_pred_train)) ) 
-print('Root Mean Squared Error (Test):', np.sqrt(metrics.mean_squared_error(y_test, y_pred))  )
+print('Root Mean Squared Error (Test):', np.sqrt(metrics.mean_squared_error(y_test, y_pred_test))  )
 
 
 ##Submitting your work
@@ -88,6 +108,8 @@ Submit = pd.read_csv("E:\\Work\\AV_Compete\\BlackFriday\\Sample_Submission.csv")
 Submit['User_ID'] = uids
 Submit['Product_ID'] = pids
 Submit['Purchase'] = y_pred
-Submit.to_csv('E:\\Work\\AV_Compete\\BlackFriday\\LinearReg.csv', index= False)
+Submit.to_csv('E:\\Work\\AV_Compete\\BlackFriday\\RidgeReg.csv', index= False)
+
+
 
 
