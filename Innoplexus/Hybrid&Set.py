@@ -41,27 +41,53 @@ def cos_similarity(textlist):
     return (tfidf * tfidf.T).toarray()
 
 documents = info_test
-a = cos_similarity(documents['article_title'])
+a = cos_similarity(documents['abstract'])
 
 from collections import defaultdict
-dicts = defaultdict(list)
+dicts_abstract = defaultdict(list)
 
 for i in range(0,len(a)):
     for j in range(0,len(a)):
-        if(a[i][j] > 0.40 and i != j):
-            print(documents.iloc[i]['pmid'] , "   " , documents.iloc[j]['pmid'] , "   " , a[i][j])
-            dicts[documents.iloc[i]['pmid']].append(documents.iloc[j]['pmid'])
+        if(a[i][j] > 0.23 and i != j and documents.iloc[i]['set'] == documents.iloc[j]['set']):
+            #print(documents.iloc[i]['pmid'] , "   " , documents.iloc[j]['pmid'] , "   " , a[i][j])
+            print( documents.iloc[i]['set'], "==SET==", documents.iloc[j]['set'])
+            dicts_abstract[documents.iloc[i]['pmid']].append(documents.iloc[j]['pmid'])
             
-print("Number of elements in the dictionary",len(dicts.keys()))
+print("Number of elements in the dictionary",len(dicts_abstract.keys()))
 
-for i in range(0,len(data_train)):
-    print(data_train['pmid'][i] , " value" ,dicts.get(data_train['pmid'][i]) , " expected ",data_train['ref_list'][i] )
+documents = info_test
+a = cos_similarity(documents['article_title'])
 
-submission.head()
+from collections import defaultdict
+dicts_title = defaultdict(list)
 
-print(dicts.get(6211173))
-print(len(dicts.keys()))
-print(submission.shape)
+for i in range(0,len(a)):
+    for j in range(0,len(a)):
+        if(a[i][j] > 0.30 and i != j and documents.iloc[i]['set'] == documents.iloc[j]['set']):
+            #print(documents.iloc[i]['pmid'] , "   " , documents.iloc[j]['pmid'] , "   " , a[i][j])
+            print( documents.iloc[i]['set'], "==SET==", documents.iloc[j]['set'])
+            dicts_title[documents.iloc[i]['pmid']].append(documents.iloc[j]['pmid'])
+            
+print("Number of elements in the dictionary",len(dicts_title.keys()))
+
+
+print(dicts_abstract)
+print(dicts_title)
+#### Final Preparation
+from collections import defaultdict
+
+dicts = defaultdict(list)
+
+for tempdict in (dicts_abstract, dicts_title): # you can list as many input dicts as you want here
+    for key, value in tempdict.items():
+        dicts[key].append(value)
+
+print(dicts.get(4171054))
+from itertools import chain
+for key, value in dicts.items():
+    dicts[key] = list(chain.from_iterable(value))
+    
+print(dicts)
 
 for index, row in submission.iterrows():
     #print (row["pmid"], row["ref_list"])
@@ -72,5 +98,6 @@ for index, row in submission.iterrows():
         val = []
     submission.set_value(index,'ref_list', val )
     
-submission.to_csv("E:\\Work\\AV_Compete\\Innoplexus\\basetitle40.csv" , index=False)
+    
+submission.to_csv("E:\\Work\\AV_Compete\\Innoplexus\\HybridSet2030.csv" , index=False)
     
