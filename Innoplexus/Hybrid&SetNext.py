@@ -18,6 +18,7 @@ info_test = pd.read_csv("E:\\Work\\AV_Compete\\Innoplexus\\information_test.csv"
 info_train.head()
 
 #for index, text in input_train_data.iterrows():
+#for index, text in input_train_data.iterrows():
 #    print(text['abstract'])
 #    tokens = [t for t in text['abstract'].split() if t not in stopwords.words('english')]
 #    lemtokens = [lemmer.lemmatize(token) for token in tokens]
@@ -40,6 +41,8 @@ def cos_similarity(textlist):
     tfidf = TfidfVec.fit_transform(textlist)
     return (tfidf * tfidf.T).toarray()
 
+	
+## Processing the abstracts
 documents = info_test
 a = cos_similarity(documents['abstract'])
 
@@ -55,6 +58,8 @@ for i in range(0,len(a)):
             
 print("Number of elements in the dictionary",len(dicts_abstract.keys()))
 
+
+## Processing article titles
 documents = info_test
 a = cos_similarity(documents['article_title'])
 
@@ -71,6 +76,7 @@ for i in range(0,len(a)):
 print("Number of elements in the dictionary",len(dicts_title.keys()))
 
 
+### Processing the author string
 from sklearn.feature_extraction.text import TfidfVectorizer
 TfidfVec = TfidfVectorizer()
 def cos_similarity_basic(textlist):
@@ -92,25 +98,21 @@ for i in range(0,len(a)):
             
 print("Number of elements in the dictionary",len(dicts_abstract.keys()))
 
-print(dicts_abstract)
-print(dicts_title)
-print(dicts_author)
-#### Final Preparation
+#### Final Preparation Of the dictionary
 from collections import defaultdict
-
 dicts = defaultdict(list)
 
 for tempdict in (dicts_abstract, dicts_title , dicts_author): # you can list as many input dicts as you want here
     for key, value in tempdict.items():
         dicts[key].append(value)
 
-print(dicts.get(4171054))
+### Converting every entry into the dictionary as a singular list
 from itertools import chain
 for key, value in dicts.items():
     dicts[key] = list(chain.from_iterable(value))
     
-print(dicts)
 
+#### Final Submission File Creation from the dicts dictionary 
 for index, row in submission.iterrows():
     #print (row["pmid"], row["ref_list"])
     #print (dicts.get(row["pmid"]))
