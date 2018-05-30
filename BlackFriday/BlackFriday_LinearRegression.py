@@ -27,6 +27,14 @@ pids = data_test['Product_ID']
 data = [ data_train , data_test]
 data = pd.concat(data)
 
+data.dtypes
+data["Product_ID"] = data["Product_ID"].astype('category')
+
+
+from sklearn import preprocessing
+le = preprocessing.LabelEncoder()
+le.fit(data["Product_ID"].values)
+data["Product_ID"]=le.transform(data["Product_ID"])
 
 
 ## Check for right data types or change them
@@ -48,9 +56,13 @@ data.head(5)
 data.hist(bins=30, layout=(4,4))
 plt.show()
 
+data = data[['Product_ID','isTrain']]
+
 ## Split back to test and train
 data_test = data.loc[data['isTrain'] == 0]
 data_train = data.loc[data['isTrain'] == 1]
+
+
 
 ## Splitting data into test and train
 from sklearn.model_selection import train_test_split
