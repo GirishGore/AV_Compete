@@ -88,10 +88,68 @@ from sklearn import preprocessing
 scaler = preprocessing.StandardScaler().fit(data_train.drop('Purchase',axis=1))
 X_train = scaler.transform(X_train)
 X_test = scaler.transform(X_test)
+data_test = scaler.transform(data_test.drop('Purchase',axis=1))
 
 from sklearn.ensemble import RandomForestRegressor
 rf = RandomForestRegressor(n_estimators=1000,oob_score=True)
-rf.fit(X_train,y_train)
+
+from pprint import pprint
+# Look at parameters used by our current forest
+print('Parameters currently in use:\n')
+pprint(rf.get_params())
+
+from sklearn.model_selection import RandomizedSearchCV
+# Number of trees in random forest
+n_estimators = [int(x) for x in np.linspace(start = 500, stop = 1500, num = 3)]
+# Number of features to consider at every split
+max_features = ['auto', 'sqrt']
+# Maximum number of levels in tree
+max_depth = [int(x) for x in np.linspace(10, 20, num = 2)]
+#max_depth.append(None)
+# Minimum number of samples required to split a node
+min_samples_split = [2, 5]
+# Minimum number of samples required at each leaf node
+#min_samples_leaf = [1, 2, 4]
+# Method of selecting samples for training each tree
+bootstrap = [True, False]
+
+# Create the random grid
+random_grid = {'n_estimators': n_estimators,
+               'max_features': max_features,
+               'max_depth': max_depth,
+               'min_samples_split': min_samples_split
+               #,'min_samples_leaf': min_samples_leaf
+               #,               'bootstrap': bootstrap
+               }
+pprint(random_grid)
+
+# Use the random grid to search for best hyperparameters
+# First create the base model to tune
+rf = RandomForestRegressor()
+# Random search of parameters, using 3 fold cross validation, 
+# search across 100 different combinations, and use all available cores
+rf_random = RandomizedSearchCV(estimator = rf, param_distributions = random_grid, n_iter = 100, cv = 3, verbose=2, random_state=42, n_jobs = -1)
+# Fit the random search model
+
+
+################################ GRID SEARCH ################################
+from sklearn.model_selection import GridSearchCV
+# Create the parameter grid based on the results of random search 
+param_grid = {
+    'bootstrap': [True],
+    'max_depth': [80, 90],
+    'max_features': [2, 3],
+    'min_samples_leaf': [3, 5],
+#    'min_samples_split': [8, 10, 12],
+    'n_estimators': [500, 1000 , 1200]
+}
+# Create a based model
+rf = RandomForestRegressor()
+# Instantiate the grid search model
+grid_search = GridSearchCV(estimator = rf, param_grid = param_grid, 
+                          cv = 3, n_jobs = -1, verbose = 2)
+
+grid_search.fit(X_train,y_train)
 print(rf)
 
 plt.plot(rf.feature_importances_)
@@ -101,17 +159,21 @@ plt.show()
 ## Predicting to calculate train and test error
 y_pred_train = rf.predict(X_train)
 y_pred_test = rf.predict(X_test)
-y_pred = rf.predict(data_test.drop('Purchase',axis=1))
+y_pred = rf.predict(data_test)
 
 ## Generating test and train errors RMSE
 from sklearn import metrics  
 print('Root Mean Squared Error (Train):', np.sqrt(metrics.mean_squared_error(y_train, y_pred_train)) ) 
 print('Root Mean Squared Error (Test):', np.sqrt(metrics.mean_squared_error(y_test, y_pred_test))  )
 
+del data 
+del data_train 
+del X_train
+
 ##Submitting your work
 Submit = pd.read_csv("E:\\Work\\AV_Compete\\BlackFriday\\Sample_Submission.csv")
 Submit['User_ID'] = uids
 Submit['Product_ID'] = pids
 Submit['Purchase'] = y_pred
-Submit.to_csv('E:\\Work\\AV_Compete\\BlackFriday\\RF_Basic.csv', index= False)
+Submit.to_csv('E:\\Work\\AV_Compete\\BlackFriday\\RF_Latest.csv', index= False)
 
