@@ -50,7 +50,7 @@ for i in range(data.shape[1]):
     data[:, i] = lbl.transform(data[:, i])
 
 
-
+data = pd.DataFrame( data , columns=Xcopy.columns)
 data = data.applymap(int)
 
 ### Normalized x  =    (X - Xmin) / (Xmax - Xmin)
@@ -65,29 +65,47 @@ data_test = data[data.is_Train == 0]
 
 X = data_train.drop(['is_Train'] , axis=1)
 
-X.dtypes
-X.head()
-X.shape
-y.shape
-#Import Library
-from sklearn import svm
-#svr_rbf = SVR(kernel='rbf')
-#svr_lin = SVR(kernel='linear')
-#svr_poly = SVR(kernel='poly')
+
+### RF Plain
 
 from sklearn.ensemble import RandomForestRegressor
-rf = RandomForestRegressor(n_estimators=200)
+rf = RandomForestRegressor(n_estimators=200) ## Default is 10
 rf.fit(X,y)
 rf.score(X,y)
-#Assumed you have, X (predictor) and Y (target) for training data set and x_test(predictor) of test_dataset
-# Create SVM classification object 
-model = svm.SVR(kernel='linear',C=1.0, epsilon=0.2) 
-# there is various option associated with it, like changing kernel, gamma and C value. Will discuss more # about it in next section.Train the model using the training sets and check score
-model.fit(X, y)
-rf.score(X, y)
-#Predict Output
-data_test.columns
+
 predicted= rf.predict(data_test.drop(['is_Train'] , axis=1))
+
+
+##### RF With Paramters
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+# Create the parameter grid based on the results of random search 
+param_grid = {
+    'bootstrap': [True],
+    'max_depth': [80, 90],
+    'max_features': [2, 3],
+    'min_samples_leaf': [3, 5],
+#    'min_samples_split': [8, 10, 12],
+    'n_estimators': [500, 1000 ,1200]
+}
+# Create a based model
+rf = RandomForestRegressor()
+# Instantiate the grid search model
+grid_search = GridSearchCV(estimator = rf, param_grid = param_grid, 
+                          cv = 3, n_jobs = -1, verbose = 2)
+
+grid_search.fit(X,y)
+print(rf)
+
+import matplotlib.pyplot as plt
+plt.plot(rf.feature_importances_)
+plt.xticks(np.arange(X.shape[1]), data_train.columns.tolist() , rotation=10)
+plt.show()
+
+## Predicting to calculate train and test error
+y_pred_train = rf.predict(X)
+predicted = rf.predict(data_test.drop(['is_Train'] , axis=1))
+
 
 ##Submitting your work
 Submit = pd.read_csv("E:\\Work\\AV_Compete\\BlackFriday\\Sample_Submission.csv")
