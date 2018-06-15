@@ -28,35 +28,18 @@ data = [ data_train , data_test]
 data = pd.concat(data)
 
 data.dtypes
-data["Product_ID"] = data["Product_ID"].astype('category')
-
+data = data.applymap(str)
 
 from sklearn import preprocessing
 le = preprocessing.LabelEncoder()
-le.fit(data["Product_ID"].values)
-data["Product_ID"]=le.transform(data["Product_ID"])
 
+for ctype in data.columns[data.dtypes == 'object']:
+    le.fit(data[ctype].values)
+    data[ctype]=le.transform(data[ctype])
 
+data.describe()
+data.info()
 ## Check for right data types or change them
-data['User_ID'] = data.User_ID.astype(object)
-data.fillna(0)
-data['Product_Category_2'] = data.Product_Category_2.astype(object)
-data['Product_Category_3'] = data.Product_Category_3.astype(object)
-
-### One lable encoding of categorical variables
-for ctype in data.columns[data.dtypes == 'object']: 	
-#    if(ctype != 'User_ID' and ctype != 'Product_ID'):
-        data[ctype] = data[ctype].factorize()[0];
-
-
-## A final looka at the data
-data.describe(include='all')
-data.head(5)
-## Visualizing data
-data.hist(bins=30, layout=(4,4))
-plt.show()
-
-data = data[['Product_ID','isTrain']]
 
 ## Split back to test and train
 data_test = data.loc[data['isTrain'] == 0]
@@ -72,6 +55,8 @@ X_train, X_test, y_train, y_test = train_test_split(data_train, Y , test_size=0.
 from sklearn.linear_model import LinearRegression  
 regressor = LinearRegression()  
 regressor.fit(X_train, y_train)  
+print (regressor.coef_,regressor.intercept_)
+
 
 ## Predicting to calculate train and test error
 y_pred_train = regressor.predict(X_train)
@@ -92,7 +77,8 @@ df_test_error.plot.scatter(x=['Predicted'] , y=['Actual'])
 ## Generating test and train errors RMSE
 from sklearn import metrics  
 print('Root Mean Squared Error (Train):', np.sqrt(metrics.mean_squared_error(y_train, y_pred_train)) ) 
-print('Root Mean Squared Error (Test):', np.sqrt(metrics.mean_squared_error(y_test, y_pred))  )
+print('Root Mean Squared Error (Test):', np.sqrt(metrics.mean_squared_error(y_test, y_pred_test))  )
+
 
 
 ##Submitting your work
@@ -100,6 +86,6 @@ Submit = pd.read_csv("E:\\Work\\AV_Compete\\BlackFriday\\Sample_Submission.csv")
 Submit['User_ID'] = uids
 Submit['Product_ID'] = pids
 Submit['Purchase'] = y_pred
-Submit.to_csv('E:\\Work\\AV_Compete\\BlackFriday\\LinearReg.csv', index= False)
+Submit.to_csv('E:\\Work\\AV_Compete\\BlackFriday\\LinearReg1.csv', index= False)
 
 
