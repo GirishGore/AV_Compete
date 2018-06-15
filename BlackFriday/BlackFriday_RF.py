@@ -1,110 +1,115 @@
 # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Created on Wed May 23 13:03:36 2018
 
 @author: Girish
 """
 
+## Importing core pandas and numpy libraries
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
+## Loading train and test data and assigning a new variable to differentiate train data
 data_train = pd.read_csv("E:\\Work\\AV_Compete\\BlackFriday\\train.csv")
+data_train['isTrain'] = 1
 data_test = pd.read_csv("E:\\Work\\AV_Compete\\BlackFriday\\test.csv")
+data_test['isTrain'] = 0
+
+## Extracting the Dependent Variable
+Y = data_train['Purchase']
+del data_train['Purchase']
 
 uids = data_test['User_ID']
 pids = data_test['Product_ID']
 
-data_train['is_Train'] = 1
-data_test['is_Train'] = 0
+## Combining the train and test data for feature engineering.
+data = [ data_train , data_test]
+data = pd.concat(data)
 
-data = pd.concat([data_train,data_test])
-data.isnull().values.any()
-
-
-y = data_train['Purchase']
-data = pd.concat([data_train.drop(['Purchase'], axis = 1),data_test])
-
-### Some basic checks for overlap. Proves that all USER_ID's and some PRODUCT_ID's are repeated in the test data set
-data_train['User_ID'].map(lambda x : True if x in data_test['User_ID'] else False).value_counts()
-data_train['Product_ID'].map(lambda x : True if x in data_test['Product_ID'] else False).value_counts()
-
-## Filling na values with -999
-data.isna().sum()
-data.index
-
-data.fillna(999 , inplace=True)
-
-#Convert all the columns to string 
-data = data.applymap(str)
 data.dtypes
-
-### Keep a copy of data
-Xcopy = data.copy()
-
-data = np.array(data)
+data = data.applymap(str)
 
 from sklearn import preprocessing
-for i in range(data.shape[1]):
-    lbl = preprocessing.LabelEncoder()
-    lbl.fit(list(data[:,i]))
-    data[:, i] = lbl.transform(data[:, i])
+le = preprocessing.LabelEncoder()
 
+for ctype in data.columns[data.dtypes == 'object']:
+    le.fit(data[ctype].values)
+    data[ctype]=le.transform(data[ctype])
 
-data = pd.DataFrame( data , columns=Xcopy.columns)
-data = data.applymap(int)
+data.describe()
+data.info()
+## Check for right data types or change them
 
-### Normalized x  =    (X - Xmin) / (Xmax - Xmin)
-from sklearn.preprocessing import MinMaxScaler
-min_max=MinMaxScaler()
-data = min_max.fit_transform(data)
+## Split back to test and train
+data_test = data.loc[data['isTrain'] == 0]
+data_train = data.loc[data['isTrain'] == 1]
 
-data = pd.DataFrame( data , columns=Xcopy.columns)
+## Splitting data into test and train
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(data_train, Y , test_size=0.2, random_state=0)  
 
-data_train = data[data.is_Train == 1] 
-data_test = data[data.is_Train == 0]
-
-X = data_train.drop(['is_Train'] , axis=1)
-
-
+X = X_train
+y = y_train
 ### RF Plain
 
 from sklearn.ensemble import RandomForestRegressor
-rf = RandomForestRegressor(n_estimators=200) ## Default is 10
+rf = RandomForestRegressor(n_estimators=5) ## Default is 10
 rf.fit(X,y)
-rf.score(X,y)
+rf.score(X,y)  ### Bigger is better
 
-predicted= rf.predict(data_test.drop(['is_Train'] , axis=1))
+predicted_Train = rf.predict(X_train)
+predicted_Test = rf.predict(X_test)
+predicted= rf.predict(data_test)
 
+### Getting Variable Importance Scores
+rf.feature_importances_
+sorted(zip(rf.feature_importances_,data_train.columns) , reverse=True)
 
+## Generating test and train errors RMSE
+from sklearn import metrics  
+print('Root Mean Squared Error (Train):', np.sqrt(metrics.mean_squared_error(y_train, predicted_Train)) ) 
+print('Root Mean Squared Error (Test):', np.sqrt(metrics.mean_squared_error(y_test, predicted_Test))  )
+
+##Submitting your work
+Submit = pd.read_csv("E:\\Work\\AV_Compete\\BlackFriday\\Sample_Submission.csv")
+Submit['User_ID'] = uids
+Submit['Product_ID'] = pids
+Submit['Purchase'] = predicted
+Submit.to_csv('E:\\Work\\AV_Compete\\BlackFriday\\RF.csv', index= False)
+
+#### Ways of going through different paramters
 ##### RF With Paramters
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
 # Create the parameter grid based on the results of random search 
 param_grid = {
     'bootstrap': [True],
-    'max_depth': [80, 90],
-    'max_features': [2, 3],
+    #'max_depth': [80, 90],
+    'max_features': [2, 7],
     'min_samples_leaf': [3, 5],
 #    'min_samples_split': [8, 10, 12],
-    'n_estimators': [500, 1000 ,1200]
+    'n_estimators': [5,8]
 }
 # Create a based model
 rf = RandomForestRegressor()
 # Instantiate the grid search model
-grid_search = GridSearchCV(estimator = rf, param_grid = param_grid, 
-                          cv = 3, n_jobs = -1, verbose = 2)
+grid_search = GridSearchCV(estimator = rf, param_grid = param_grid,cv = 3, n_jobs = -1, verbose = 2)
 
 grid_search.fit(X,y)
-print(rf)
-
-import matplotlib.pyplot as plt
-plt.plot(rf.feature_importances_)
-plt.xticks(np.arange(X.shape[1]), data_train.columns.tolist() , rotation=10)
-plt.show()
-
+print(grid_search.best_params_)
+print(grid_search.best_estimator_)
+print(grid_search.cv_results_)
 ## Predicting to calculate train and test error
-y_pred_train = rf.predict(X)
-predicted = rf.predict(data_test.drop(['is_Train'] , axis=1))
+predict_Train = grid_search.predict(X_train.drop(['isTrain'] , axis=1))
+predict_Test = grid_search.predict(X_test.drop(['isTrain'] , axis=1))
+predicted = grid_search.predict(data_test.drop(['isTrain'] , axis=1))
+
+## Generating test and train errors RMSE
+from sklearn import metrics  
+print('Root Mean Squared Error (Train):', np.sqrt(metrics.mean_squared_error(y_train, predict_Train)) ) 
+print('Root Mean Squared Error (Test):', np.sqrt(metrics.mean_squared_error(y_test, predict_Test))  )
 
 
 ##Submitting your work
@@ -112,5 +117,5 @@ Submit = pd.read_csv("E:\\Work\\AV_Compete\\BlackFriday\\Sample_Submission.csv")
 Submit['User_ID'] = uids
 Submit['Product_ID'] = pids
 Submit['Purchase'] = predicted
-Submit.to_csv('E:\\Work\\AV_Compete\\BlackFriday\\SVM_Latest.csv', index= False)
+Submit.to_csv('E:\\Work\\AV_Compete\\BlackFriday\\RFGRid_Latest.csv', index= False)
 
