@@ -87,10 +87,10 @@ from sklearn.model_selection import GridSearchCV
 param_grid = {
     'bootstrap': [True],
     #'max_depth': [80, 90],
-    'max_features': [2, 7],
-    'min_samples_leaf': [3, 5],
+    'max_features': [7],
+    'min_samples_leaf': [5],
 #    'min_samples_split': [8, 10, 12],
-    'n_estimators': [5,8]
+    'n_estimators': [80]
 }
 # Create a based model
 rf = RandomForestRegressor()
@@ -102,9 +102,9 @@ print(grid_search.best_params_)
 print(grid_search.best_estimator_)
 print(grid_search.cv_results_)
 ## Predicting to calculate train and test error
-predict_Train = grid_search.predict(X_train.drop(['isTrain'] , axis=1))
-predict_Test = grid_search.predict(X_test.drop(['isTrain'] , axis=1))
-predicted = grid_search.predict(data_test.drop(['isTrain'] , axis=1))
+predict_Train = grid_search.predict(X_train)
+predict_Test = grid_search.predict(X_test)
+predicted = grid_search.predict(data_test)
 
 ## Generating test and train errors RMSE
 from sklearn import metrics  

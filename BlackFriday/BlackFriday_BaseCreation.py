@@ -40,7 +40,7 @@ data_test.info()
 #data_test['Purchase'] = [table.loc((row['User_ID'].astype(int),row['Product_ID'].astype(int)),'Purchase') for row in data_test]
 
 data_test['Purchase'] = [ table.loc[(x,y),'Purchase'] for x, y in zip(data_test['User_ID'], data_test['Product_ID'])]
-[ (x,y) for x, y in zip(data_test['User_ID'], data_test['Product_ID'])]
+#[ (x,y) for x, y in zip(data_test['User_ID'], data_test['Product_ID'])]
 
 submit = pd.read_csv("E:\\Work\\AV_Compete\\BlackFriday\\Sample_Submission.csv")
 submit = data_test[['User_ID','Product_ID','Purchase']]
